@@ -4,8 +4,7 @@ const dbConfig = require('./config/database.js');
 const ejs  = require('ejs');
 const mysql = require('mysql');
 const connection = mysql.createConnection(dbConfig);
-const redis = require("redis");
-const redisClient = redis.createClient({url: `redis://127.0.0.1:6379`});
+const redisClient =  require('./redis/redis.js');
 
 const port = 3000;
 
@@ -30,14 +29,26 @@ app.get('/employees', (req, res) => {
 
 // get data from Redis
 app.get('/employeesCached', (req, res)=> {
-  const sql = "SELECT * FROM employees limit 10000"
-  connection.query(sql, function (err, result, fields) {
-    if (err) throw err;
-    console.log(result[0])
-    // for (let i ) in result
-    // redisClient.setEx()
-    // res.render('index', {employees : result})
-  });
+  redisClient.get('employees', async(err,data) => {
+    if (err) console.error(err)
+    if (data) {
+      // cache hit
+      res.json(JSON.parse(data))
+      console.log('cache hit')
+    } else {
+      // cache miss
+      console.log('cache miss')
+
+    }
+  })
+  // const sql = "SELECT * FROM employees limit 10000"
+  // connection.query(sql, function (err, result, fields) {
+  //   if (err) throw err;
+  //   console.log(result[0])
+  //   // for (let i ) in result
+  //   // redisClient.setEx()
+  //   // res.render('index', {employees : result})
+  // });
 })
 
 app.listen(port, () => console.log(`Example app listening on port ${port}`))
